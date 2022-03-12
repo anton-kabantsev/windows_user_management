@@ -12,7 +12,7 @@ def spaces_deletion(str):
         ind = ind +1
     return string
 
-def get_users():
+def get_users():          # Get users list
     result = subprocess.check_output(['net', 'user'])
     output = result.decode('cp866').split("\n")
     user_list = []
@@ -25,7 +25,7 @@ def get_users():
         ind = ind +1
     return user_list
 
-def str_parse(str, user_list):
+def str_parse(str, user_list): # For parsing cmd out put while getting users lis def get_users()
     # парсим строку образца user1    user2   user3    test user
     output = str.split('       ') #7 spaces
     for i in output:
@@ -52,7 +52,7 @@ def user_info(path_to_file):
             ProfileImagePath = ''
         file.write('*****'+ '\n')
         file.write('<1>'+u + '\n')                                    # 1 user name
-        file.write('<2>'+sid+ '\n')                                # 2 user sid
+        file.write('<2>'+sid+ '\n')                                   # 2 user sid
         file.write('<3>'+ProfileImagePath+ '\n')                      # 3 user profile path
         result = subprocess.check_output(['net', 'user', u])
         output = result.decode('cp866').split("\n")
