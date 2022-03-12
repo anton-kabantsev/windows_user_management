@@ -1,7 +1,5 @@
-#app needs
-#pywin32==303
-#WMI==1.5.1
-import win32security, winreg, wmi, subprocess, sys
+
+import winreg, subprocess, sys
 
 def spaces_deletion(str):
     string = ''
@@ -14,24 +12,49 @@ def spaces_deletion(str):
         ind = ind +1
     return string
 
-def get_user_info(path_to_file):
+def get_users():
+    result = subprocess.check_output(['net', 'user'])
+    output = result.decode('cp866').split("\n")
+    user_list = []
+    ind = 4
+    while ind != len(output):
+        if output[ind].find('Команда выполнена успешно.') == 0:
+            break
+        else:
+            str_parse(output[ind],user_list)
+        ind = ind +1
+    return user_list
+
+def str_parse(str, user_list):
+    # парсим строку образца user1    user2   user3    test user
+    output = str.split('       ') #7 spaces
+    for i in output:
+        user = spaces_deletion(i)
+        if len(user)>0:
+            user_list.append(user)
+
+def get_user_sid(user_name): #wmic useraccount where name='антон' get sid
+    command = ["wmic","useraccount","where","name="+"'"+user_name+"'","get","sid"]
+    result = subprocess.check_output(command)
+    output = result.decode('cp866').split("\n")
+    return spaces_deletion(output[1])
+
+def user_info(path_to_file):
     file = open(path_to_file,'w')
-    w=wmi.WMI()
-    for u in w.Win32_UserAccount():
-        sid = win32security.LookupAccountName(None, u.name)[0]
-        sidstr = win32security.ConvertSidToStringSid(sid)
+    for u in get_users():
+        sid = get_user_sid(u)
         subkey = r"SOFTWARE\Microsoft\Windows NT\CurrentVersion\ProfileList"+'\\'
-        subkey = subkey + sidstr
+        subkey = subkey + sid
         try:
             key = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE,subkey)
             ProfileImagePath = winreg.QueryValueEx(key, "ProfileImagePath")[0]
         except:
             ProfileImagePath = ''
         file.write('*****'+ '\n')
-        file.write('<1>'+u.Name + '\n')                               # 1 user name
-        file.write('<2>'+sidstr+ '\n')                                # 2 user sid
+        file.write('<1>'+u + '\n')                                    # 1 user name
+        file.write('<2>'+sid+ '\n')                                # 2 user sid
         file.write('<3>'+ProfileImagePath+ '\n')                      # 3 user profile path
-        result = subprocess.check_output(['net', 'user', u.name])
+        result = subprocess.check_output(['net', 'user', u])
         output = result.decode('cp866').split("\n")
         for i in output:
             if i.find('Полное имя') == 0:
@@ -55,11 +78,9 @@ def get_user_info(path_to_file):
         #file.write('**********')
     file.close()
 
-path_to_file = ''
-do_not_continue = False
-#  первым делом парсим ввод коммандной строки
 try:
-    path_to_file = sys.argv[1]     # Путь к файлу для выгрузки данных
+    do_not_continue = False
+    path_to_file = sys.argv[1]     # Путь к файлу для выгрузки данных sys.path[1]+'\\user_data.txt'#
     if path_to_file == 'help':
         print('Параметры для работы парсера: 1. Полный путь к файлу')
         do_not_continue = True # прервать выполнение кода
@@ -68,10 +89,12 @@ except :
     do_not_continue = True # прервать выполнение кода
 
 if do_not_continue == False:
-    get_user_info(path_to_file)
-    file_flg = sys.argv[2]
+    user_info(path_to_file)
+    #get_user_info(path_to_file)
+    file_flg = sys.argv[2] #sys.path[1]+'\\work_done.txt'#
     flg = open(file_flg, "w")
     flg.write(' ')
     flg.close()
+
 
 
